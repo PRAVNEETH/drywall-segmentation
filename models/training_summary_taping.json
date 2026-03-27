@@ -1,0 +1,13 @@
+{
+  "dataset": "taping",
+  "epochs_trained": 11,
+  "best_val_dice": 1.0,
+  "best_checkpoint": "/home/pravneeth/Desktop/drywall_segmentation/models/clipseg_taping_best.pth",
+  "training_time_seconds": 372.3279023170471,
+  "seed": 42,
+  "lr": 0.0001,
+  "batch_size": 8,
+  "image_size": 352,
+  "model_name": "CIDAS/clipseg-rd64-refined",
+  "train_all": false
+}

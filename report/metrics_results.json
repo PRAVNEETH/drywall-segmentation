@@ -1,0 +1,28 @@
+{
+  "cracks": {
+    "prompt": "segment crack",
+    "aggregate": {
+      "mIoU": 0.5309,
+      "mDice": 0.6732,
+      "mPrecision": 0.6603,
+      "mRecall": 0.7675,
+      "mAccuracy": 0.9776,
+      "std_IoU": 0.182,
+      "std_Dice": 0.1733,
+      "n_images": 806
+    }
+  },
+  "taping": {
+    "prompt": "segment taping area",
+    "aggregate": {
+      "mIoU": 0.0,
+      "mDice": 0.0,
+      "mPrecision": 0.0,
+      "mRecall": 0.0,
+      "mAccuracy": 1.0,
+      "std_IoU": 0.0,
+      "std_Dice": 0.0,
+      "n_images": 154
+    }
+  }
+}

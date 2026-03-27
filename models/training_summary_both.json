@@ -1,0 +1,13 @@
+{
+  "dataset": "both",
+  "epochs_trained": 40,
+  "best_val_dice": 0.7179783831040064,
+  "best_checkpoint": "/home/pravneeth/Desktop/drywall_segmentation/models/clipseg_both_best.pth",
+  "training_time_seconds": 8622.250794887543,
+  "seed": 42,
+  "lr": 0.0001,
+  "batch_size": 8,
+  "image_size": 512,
+  "model_name": "CIDAS/clipseg-rd64-refined",
+  "train_all": false
+}
