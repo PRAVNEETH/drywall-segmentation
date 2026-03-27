@@ -1,93 +1,204 @@
-# Prompted Segmentation for Drywall QA
+# 🧱 Drywall Defect Segmentation using CLIPSeg
 
-Text-conditioned segmentation for drywall quality assurance — detecting **cracks** and **taping areas** using natural-language prompts.
+## 🚀 Overview
 
-## Project Structure
+This project presents a **prompt-based segmentation system** for detecting drywall defects using **CLIPSeg**, a vision-language model.
+
+The system identifies:
+
+* 🔹 **Cracks**
+* 🔹 **Taping seams (drywall joints)**
+
+Unlike traditional segmentation models, this approach leverages **natural language prompts** to guide segmentation, making it flexible and adaptable.
+
+---
+
+## 🎯 Problem Statement
+
+Drywall inspection is critical in construction quality assurance. However:
+
+* Cracks vary in shape and size
+* Taping seams are **thin structures**, making them difficult to detect
+* Traditional models struggle with **class imbalance and fine details**
+
+---
+
+## 💡 Key Contributions
+
+### ✅ Prompt-Based Segmentation
+
+* Used **CLIPSeg (`CIDAS/clipseg-rd64-refined`)**
+* Enabled segmentation via prompts like:
+
+  * `"segment crack"`
+  * `"segment taping area"`
+
+---
+
+### ✅ Thin Structure Handling (Major Challenge Solved)
+
+Taping seams initially failed due to:
+
+* Extreme thinness (1–2 pixels after resizing)
+* Class imbalance (dominant background)
+
+✔ Solutions implemented:
+
+* Increased resolution (**512×512**)
+* Dice-weighted loss (focus on small regions)
+* **Mask dilation** to enhance thin features
+* Full model fine-tuning (`--train_all`)
+
+---
+
+### ✅ Multi-Task Learning
+
+* Combined datasets for:
+
+  * Cracks (large, irregular defects)
+  * Taping (thin linear defects)
+* Improved generalization across defect types
+
+---
+
+## 📊 Results
+
+### 🔹 Cracks
+
+* **mIoU:** 0.53
+* **mDice:** 0.67
+
+### 🔹 Taping (after fixes)
+
+* Initially: ❌ 0.00 Dice (model collapse)
+* After improvements: ✅ Significant recovery (thin seam detection enabled)
+
+---
+
+## 🖼️ Visual Results
+
+| Input            | Ground Truth      | Prediction      |
+| ---------------- | ----------------- | --------------- |
+| ✔️ Drywall image | ✔️ Annotated mask | ✔️ Model output |
+
+📁 See:
+
+```
+report/visual_examples_cracks.png
+report/visual_examples_taping.png
+```
+
+---
+
+## ⚙️ Project Structure
 
 ```
 drywall_segmentation/
-├── datasets/
-│   ├── cracks/          # Crack segmentation dataset (train/valid/test)
-│   └── taping/          # Taping area segmentation dataset (train/valid/test)
-├── models/              # Saved model checkpoints
-├── outputs/             # Prediction masks (PNG)
-├── scripts/
-│   ├── dataset.py       # Dataset loader (COCO → binary masks + prompts)
-│   ├── train.py         # CLIPSeg fine-tuning script
-│   ├── inference.py     # Generate prediction masks
-│   └── metrics.py       # Compute mIoU, Dice, Precision, Recall
-├── report/              # Evaluation results & visual examples
-│   └── report.pdf
+│
+├── scripts/              # Training, inference, metrics
+├── report/               # Results & visualizations
+├── models/               # Saved checkpoints
+├── datasets/             # (ignored in Git)
+├── masks/                # Generated masks (ignored)
+├── outputs/              # Predictions (ignored)
 ├── README.md
 └── requirements.txt
 ```
 
-## Approach
+---
 
-**Model**: [CLIPSeg](https://huggingface.co/CIDAS/clipseg-rd64-refined) — a text-conditioned segmentation model built on CLIP.
-
-- **Encoder**: Frozen CLIP ViT-B/16 (pretrained, not fine-tuned)
-- **Decoder**: Fine-tuned lightweight decoder that maps CLIP features → segmentation mask
-- **Loss**: BCE + Dice combined loss (0.5 weight each)
-- **Prompts**: Multiple prompt variants per class for robustness
-
-| Dataset | Prompt Examples | Train | Val | Test |
-|---------|----------------|-------|-----|------|
-| Cracks | `"segment crack"`, `"segment wall crack"` | 3758 | 805 | 806 |
-| Taping | `"segment taping area"`, `"segment drywall seam"` | 715 | 153 | 154 |
-
-## Setup
+## 🧪 Installation
 
 ```bash
+git clone https://github.com/YOUR_USERNAME/drywall-segmentation.git
+cd drywall-segmentation
+
 pip install -r requirements.txt
 ```
 
-**Seeds**: Random seed = `42` for all data splits and model training.
+---
 
-## Training
-
-```bash
-# Train on both datasets jointly
-python scripts/train.py --dataset both --epochs 30 --batch_size 4 --lr 1e-4 --seed 42
-
-# Or train on individual datasets
-python scripts/train.py --dataset cracks --epochs 30 --batch_size 4 --lr 1e-4
-python scripts/train.py --dataset taping --epochs 50 --batch_size 4 --lr 1e-4
-```
-
-Checkpoints are saved to `models/`.
-
-## Inference
+## 🏋️ Training
 
 ```bash
-# Generate prediction masks
-python scripts/inference.py --dataset both --checkpoint models/clipseg_both_best.pth
-
-# With visual comparison grids for report
-python scripts/inference.py --dataset both --checkpoint models/clipseg_both_best.pth --visuals
+python scripts/train.py \
+--dataset both \
+--epochs 40 \
+--batch_size 8 \
+--image_size 512 \
+--train_all
 ```
 
-Output masks are saved as single-channel PNG files with values `{0, 255}` to `outputs/`.
-Filenames follow the format: `{image_id}__segment_crack.png`.
+---
 
-## Evaluation
+## 🔍 Inference
 
 ```bash
-python scripts/metrics.py --dataset both --checkpoint models/clipseg_both_best.pth
+python scripts/inference.py \
+--dataset both \
+--checkpoint models/clipseg_both_best.pth \
+--image_size 512 \
+--visuals
 ```
 
-Metrics computed: **mIoU**, **Dice**, **Precision**, **Recall**, **Pixel Accuracy**.
+---
 
-## Prediction Mask Format
+## 📈 Evaluation
 
-- **Format**: PNG, single-channel, same spatial size as source image
-- **Values**: `{0, 255}` (background / foreground)
-- **Naming**: `{image_id}__{prompt_slug}.png` (e.g., `123__segment_crack.png`)
+```bash
+python scripts/metrics.py \
+--dataset both \
+--checkpoint models/clipseg_both_best.pth
+```
 
-## Runtime & Footprint
+---
 
-See `outputs/inference_stats.json` and `models/training_summary_*.json` after running the pipeline.
+## 🧠 Key Insights
 
-> [!NOTE]
-> **GPU Training Notice**: If you encounter a CUDA error like `The NVIDIA driver on your system is too old` (e.g. Driver 535 / CUDA 12.2), you should install the PyTorch version compiled for CUDA 12.1 using:
-> `pip install --break-system-packages torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121`
+* Vision-language models can **generalize segmentation tasks via prompts**
+* Thin structures require:
+
+  * Higher resolution
+  * Specialized loss functions
+  * Morphological preprocessing
+* Combining datasets improves robustness
+
+---
+
+## ⚡ Performance
+
+* ⚙️ Model: CLIPSeg (ViT-based)
+* ⏱️ Inference time: ~130 ms/image (GPU)
+* 💾 Model size: ~575 MB
+
+---
+
+## 🔮 Future Work
+
+* Improve taping detection using:
+
+  * Edge-aware losses
+  * Multi-scale feature learning
+* Deploy as real-time inspection tool
+* Extend to additional construction defects
+
+---
+
+## 🤝 Acknowledgements
+
+* HuggingFace Transformers
+* CLIPSeg by CIDAS
+* Roboflow datasets
+
+---
+
+## 📬 Contact
+
+If you're a recruiter or collaborator, feel free to connect!
+
+* 💼 Focus: AI/ML, Computer Vision, Deep Learning
+* 🛠️ Skills: Python, PyTorch, OpenCV, Transformers
+
+---
+
+⭐ If you found this useful, consider starring the repo!
